@@ -1,6 +1,6 @@
 // Add Express
 const express = require("express");
-const Redis = require("ioredis");
+
 var path = require("path");
 const passport = require("passport");
 const flash = require("connect-flash");
@@ -8,7 +8,7 @@ const session = require("express-session");
 const bcrypt = require("bcrypt");
 // Initialize Express
 const app = express();
-
+const redisClient = require(path.join(__dirname, "./config/redis"));
 // set the view engine to ejs
 app.set("views", path.join(__dirname, "./views"));
 app.set("view engine", "ejs");
@@ -28,9 +28,11 @@ app.use(passport.initialize());
 app.use(passport.session());
 // Connect flash
 app.use(flash());
-let client = new Redis(
-  "redis://default:a1e07c7df6b2437b9005d2a631d72b7d@eu2-driving-swine-30169.upstash.io:30169"
-);
+app.use((req, res, next) => {
+  res.locals.success_msg = req.flash("success_msg");
+  res.locals.error_msg = req.flash("error_msg");
+  next();
+});
 
 app.get("/", function (req, res) {
   res.render("pages/home", { name: "Hello world" });
@@ -42,7 +44,7 @@ app.get("/users/login", function (req, res) {
 app.get("/users/register", function (req, res) {
   res.render("pages/register");
 });
-app.post("/users/register", function (req, res) {
+app.post("/users/register", async function (req, res) {
   const { name, email, password, password2 } = req.body;
   let errors = [];
 
@@ -59,7 +61,7 @@ app.post("/users/register", function (req, res) {
   }
 
   if (errors.length > 0) {
-    res.render("register", {
+    res.render("pages/register", {
       errors,
       name,
       email,
@@ -67,7 +69,41 @@ app.post("/users/register", function (req, res) {
       password2,
     });
   } else {
-    console.log("OK");
+    try {
+      const id = await redisClient.hget("users", email);
+      if (id !== null) {
+        errors.push({ msg: "Email already exists" });
+        res.render("pages/register", {
+          errors,
+          name,
+          email,
+          password,
+          password2,
+        });
+      } else {
+        const hashed_password = await bcrypt.hash(password, 10);
+
+        const new_user = {
+          hashed_password,
+          email,
+          date: new Date(),
+        };
+        const user_id = await redisClient.incr("new_user_id");
+        await redisClient.hmset("user:" + user_id, new_user);
+        await redisClient.hset("users", new_user.email, user_id);
+        req.flash("success_msg", "User are now registered");
+        res.redirect("/users/login");
+      }
+    } catch (error) {
+      errors.push({ msg: error.message });
+      res.render("pages/register", {
+        errors,
+        name,
+        email,
+        password,
+        password2,
+      });
+    }
   }
   //   res.render("pages/register");
 });
