@@ -24,7 +24,7 @@ app.use(
     saveUninitialized: true,
   })
 );
-
+app.use(express.static("dist"));
 // Connect flash
 app.use(flash());
 app.use((req, res, next) => {
@@ -50,18 +50,18 @@ function auth_required(req, res, next) {
   }
 }
 
-app.get("/", function (req, res) {
-  res.render("pages/home", { name: "Hello world" });
+app.get("/", auth_required, function (req, res) {
+  res.render("pages/home", { user: req.user });
 });
 
 app.get("/users/login", auth_required, function (req, res) {
   const user = req.user;
-  if (user) return res.redirect("/dashboard");
+  if (user) return res.redirect("/");
   res.render("pages/login");
 });
 app.get("/users/register", auth_required, function (req, res) {
   const user = req.user;
-  if (user) return res.redirect("/dashboard");
+  if (user) return res.redirect("/");
   res.render("pages/register");
 });
 app.get("/logout", (req, res) => {
@@ -138,7 +138,7 @@ app.post("/users/login", async function (req, res) {
         sameSite: "lax",
       });
 
-      return res.redirect("/dashboard");
+      return res.redirect("/profile");
     } catch (error) {
       errors.push({ msg: error.message });
       return res.render("pages/login", {
@@ -215,7 +215,7 @@ app.post("/users/register", async function (req, res) {
   //   res.render("pages/register");
 });
 
-app.get("/dashboard", auth_required, (req, res) => {
+app.get("/profile", auth_required, (req, res) => {
   const user = req.user;
   if (!user) return res.redirect("/users/login");
   res.render("pages/dashboard", { user });
