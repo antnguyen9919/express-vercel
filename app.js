@@ -24,7 +24,7 @@ app.use(
     saveUninitialized: true,
   })
 );
-app.use(express.static("dist"));
+app.use(express.static(path.resolve(__dirname, "dist")));
 // Connect flash
 app.use(flash());
 app.use((req, res, next) => {
