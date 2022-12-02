@@ -1,10 +1,12 @@
 // Add Express
 const express = require("express");
 
+var path = require("path");
 // Initialize Express
 const app = express();
 
 // set the view engine to ejs
+app.set("views", path.join(__dirname, "./views"));
 app.set("view engine", "ejs");
 // Create GET request
 
