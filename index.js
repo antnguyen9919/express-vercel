@@ -5,7 +5,7 @@ var path = require("path");
 
 const flash = require("connect-flash");
 const session = require("express-session");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 // Initialize Express
 const app = express();
 const redisClient = require(path.join(__dirname, "./config/redis"));
