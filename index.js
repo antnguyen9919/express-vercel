@@ -2,7 +2,7 @@
 const express = require("express");
 
 var path = require("path");
-const passport = require("passport");
+
 const flash = require("connect-flash");
 const session = require("express-session");
 const bcrypt = require("bcrypt");
@@ -23,9 +23,6 @@ app.use(
   })
 );
 
-// Passport middleware
-app.use(passport.initialize());
-app.use(passport.session());
 // Connect flash
 app.use(flash());
 app.use((req, res, next) => {
