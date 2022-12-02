@@ -12,9 +12,9 @@
 //       async (email, password, done) => {
 //         try {
 //           const user_id = await redisClient.hget("users", email);
-//           if (!user_id) {
-//             return done(null, false, { message: "User not found" });
-//           }
+//   if (!user_id) {
+//     return done(null, false, { message: "User not found" });
+//   }
 
 //           const stored_password = await redisClient.hget(
 //             "user:" + user_id,

@@ -1,8 +1,8 @@
 // Add Express
 const express = require("express");
-
+const jwt = require("jsonwebtoken");
 var path = require("path");
-
+const cookieParser = require("cookie-parser");
 const flash = require("connect-flash");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
@@ -13,7 +13,9 @@ const redisClient = require(path.join(__dirname, "./config/redis"));
 app.set("views", path.join(__dirname, "./views"));
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cookieParser());
+const jwt_secret =
+  "ca3eab105b5be6bb4b7b5ccf6be381c778ec6ee09b252c117db12d8c41b6a53a";
 // Express session
 app.use(
   session({
@@ -31,15 +33,122 @@ app.use((req, res, next) => {
   next();
 });
 
+function auth_required(req, res, next) {
+  //   const token = req.cookies.auth_token;
+  const token = req.cookies["auth_token"];
+  if (token) {
+    try {
+      const { user } = jwt.verify(token, jwt_secret);
+      if (user) req.user = user;
+      next();
+    } catch (error) {
+      console.log(error.message);
+      next();
+    }
+  } else {
+    next();
+  }
+}
+
 app.get("/", function (req, res) {
   res.render("pages/home", { name: "Hello world" });
 });
 
-app.get("/users/login", function (req, res) {
+app.get("/users/login", auth_required, function (req, res) {
+  const user = req.user;
+  if (user) return res.redirect("/dashboard");
   res.render("pages/login");
 });
-app.get("/users/register", function (req, res) {
+app.get("/users/register", auth_required, function (req, res) {
+  const user = req.user;
+  if (user) return res.redirect("/dashboard");
   res.render("pages/register");
+});
+app.get("/logout", (req, res) => {
+  res.clearCookie("auth_token");
+  res.redirect("/users/login");
+});
+app.post("/users/login", async function (req, res) {
+  const { email, password } = req.body;
+  let errors = [];
+
+  if (!email || !password) {
+    errors.push({ msg: "Please enter all fields" });
+  }
+  if (password.length < 6) {
+    errors.push({ msg: "Password must be at least 6 characters" });
+  }
+  if (errors.length > 0) {
+    res.render("pages/login", {
+      errors,
+
+      email,
+      password,
+    });
+  } else {
+    try {
+      const user_id = await redisClient.hget("users", email);
+      if (!user_id) {
+        errors.push({ msg: "Account doesn't exist" });
+        return res.render("pages/login", {
+          errors,
+
+          email,
+          password,
+        });
+      }
+      const stored_password = await redisClient.hget(
+        "user:" + user_id,
+        "hashed_password"
+      );
+
+      if (!stored_password) {
+        errors.push({ msg: "Password not found" });
+        return res.render("pages/login", {
+          errors,
+
+          email,
+          password,
+        });
+      }
+
+      const matched = await bcrypt.compare(password, stored_password);
+      if (!matched) {
+        errors.push({ msg: "Invalid password" });
+        return res.render("pages/login", {
+          errors,
+
+          email,
+          password,
+        });
+      }
+
+      const returned_user = await redisClient.hgetall("user:" + user_id);
+      const final_user = {
+        uid: user_id,
+        email: returned_user.email,
+        name: returned_user.name,
+        date: returned_user.date,
+      };
+      const token = jwt.sign({ user: final_user }, jwt_secret, {
+        expiresIn: "1h",
+      });
+      res.cookie("auth_token", token, {
+        httpOnly: true,
+        sameSite: "lax",
+      });
+
+      return res.redirect("/dashboard");
+    } catch (error) {
+      errors.push({ msg: error.message });
+      return res.render("pages/login", {
+        errors,
+
+        email,
+        password,
+      });
+    }
+  }
 });
 app.post("/users/register", async function (req, res) {
   const { name, email, password, password2 } = req.body;
@@ -83,6 +192,7 @@ app.post("/users/register", async function (req, res) {
         const new_user = {
           hashed_password,
           email,
+          name,
           date: new Date(),
         };
         const user_id = await redisClient.incr("new_user_id");
@@ -105,8 +215,10 @@ app.post("/users/register", async function (req, res) {
   //   res.render("pages/register");
 });
 
-app.get("/dashboard", (req, res) => {
-  res.render("pages/dashboard", { user: { name: "An" } });
+app.get("/dashboard", auth_required, (req, res) => {
+  const user = req.user;
+  if (!user) return res.redirect("/users/login");
+  res.render("pages/dashboard", { user });
 });
 
 app.get("/api/users", function (req, res) {

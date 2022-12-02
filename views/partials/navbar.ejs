@@ -12,9 +12,16 @@
         <li class="nav-item">
           <a class="nav-link" href="/dashboard">Dashboard</a>
         </li>
+        <% if (typeof user === 'undefined') { %>
         <li class="nav-item">
           <a class="nav-link" href="/users/login">Login</a>
         </li>
+        <% } %>
+        <% if (typeof user != 'undefined') { %>
+        <li class="nav-item">
+          <a class="nav-link" href="/logout">Logout</a>
+        </li>
+        <% } %>
 
       </ul>
     </div>
