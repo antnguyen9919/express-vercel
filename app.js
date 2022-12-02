@@ -6,6 +6,16 @@ const cookieParser = require("cookie-parser");
 const flash = require("connect-flash");
 const session = require("express-session");
 const bcrypt = require("bcryptjs");
+var admin = require("firebase-admin");
+const { getApps } = require("firebase-admin/app");
+const serviceAccount = require(path.join(__dirname, "./service.json"));
+
+if (!getApps().length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
 // Initialize Express
 const app = express();
 const redisClient = require(path.join(__dirname, "./config/redis"));
@@ -87,8 +97,12 @@ app.post("/users/login", async function (req, res) {
     });
   } else {
     try {
-      const user_id = await redisClient.hget("users", email);
-      if (!user_id) {
+      const stored_user_array = await admin
+        .firestore()
+        .collection("users")
+        .where("email", "==", email)
+        .get();
+      if (stored_user_array.empty) {
         errors.push({ msg: "Account doesn't exist" });
         return res.render("pages/login", {
           errors,
@@ -97,22 +111,17 @@ app.post("/users/login", async function (req, res) {
           password,
         });
       }
-      const stored_password = await redisClient.hget(
-        "user:" + user_id,
-        "hashed_password"
+      let stored_user;
+      stored_user_array.forEach((doc) => {
+        let uid = doc.id;
+        let udata = doc.data();
+        stored_user = { uid, ...udata };
+      });
+
+      const matched = await bcrypt.compare(
+        password,
+        stored_user.hashed_password
       );
-
-      if (!stored_password) {
-        errors.push({ msg: "Password not found" });
-        return res.render("pages/login", {
-          errors,
-
-          email,
-          password,
-        });
-      }
-
-      const matched = await bcrypt.compare(password, stored_password);
       if (!matched) {
         errors.push({ msg: "Invalid password" });
         return res.render("pages/login", {
@@ -122,13 +131,16 @@ app.post("/users/login", async function (req, res) {
           password,
         });
       }
-
-      const returned_user = await redisClient.hgetall("user:" + user_id);
+      const lastLogin = new Date();
+      await admin.firestore().collection("users").doc(stored_user.uid).update({
+        lastLogin,
+      });
       const final_user = {
-        uid: user_id,
-        email: returned_user.email,
-        name: returned_user.name,
-        date: returned_user.date,
+        uid: stored_user.uid,
+        email: stored_user.email,
+        name: stored_user.name,
+        date_created: stored_user.date_created,
+        lastLogin,
       };
       const token = jwt.sign({ user: final_user }, jwt_secret, {
         expiresIn: "1h",
@@ -176,10 +188,15 @@ app.post("/users/register", async function (req, res) {
     });
   } else {
     try {
-      const id = await redisClient.hget("users", email);
-      if (id !== null) {
+      const check_existed = await admin
+        .firestore()
+        .collection("users")
+        .where("email", "==", email)
+        .get();
+
+      if (!check_existed.empty) {
         errors.push({ msg: "Email already exists" });
-        res.render("pages/register", {
+        return res.render("pages/register", {
           errors,
           name,
           email,
@@ -193,11 +210,9 @@ app.post("/users/register", async function (req, res) {
           hashed_password,
           email,
           name,
-          date: new Date(),
+          date_created: new Date(),
         };
-        const user_id = await redisClient.incr("new_user_id");
-        await redisClient.hmset("user:" + user_id, new_user);
-        await redisClient.hset("users", new_user.email, user_id);
+        await admin.firestore().collection("users").add(new_user);
         req.flash("success_msg", "User are now registered");
         res.redirect("/users/login");
       }
@@ -212,13 +227,15 @@ app.post("/users/register", async function (req, res) {
       });
     }
   }
-  //   res.render("pages/register");
+});
+app.get("/management/dashboard", function (req, res) {
+  res.render("pages/dashboard");
 });
 
 app.get("/profile", auth_required, (req, res) => {
   const user = req.user;
   if (!user) return res.redirect("/users/login");
-  res.render("pages/dashboard", { user });
+  res.render("pages/profile", { user });
 });
 
 app.get("/api/users", function (req, res) {
