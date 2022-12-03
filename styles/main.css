@@ -4,7 +4,14 @@
   max-width: 800px;
   margin: 1em auto;
 }
-
+ul {
+  list-style: none;
+  list-style-position: outside;
+}
+.list-task-item:hover {
+  text-decoration: line-through;
+  color: green;
+}
 .highcharts-data-table table {
   font-family: Verdana, sans-serif;
   border-collapse: collapse;

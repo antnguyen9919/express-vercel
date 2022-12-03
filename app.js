@@ -9,6 +9,7 @@ const bcrypt = require("bcryptjs");
 var admin = require("firebase-admin");
 const { getApps } = require("firebase-admin/app");
 const serviceAccount = require(path.join(__dirname, "./service.json"));
+const bodyParser = require("body-parser");
 
 if (!getApps().length) {
   admin.initializeApp({
@@ -23,6 +24,11 @@ const app = express();
 app.set("views", path.join(__dirname, "./views"));
 app.set("view engine", "ejs");
 app.use(express.urlencoded({ extended: true }));
+// parse application/x-www-form-urlencoded
+// app.use(bodyParser.urlencoded({ extended: false }))
+
+// parse application/json
+app.use(bodyParser.json());
 app.use(cookieParser());
 const jwt_secret =
   "ca3eab105b5be6bb4b7b5ccf6be381c778ec6ee09b252c117db12d8c41b6a53a";
@@ -66,12 +72,12 @@ app.get("/", auth_required, function (req, res) {
 
 app.get("/users/login", auth_required, function (req, res) {
   const user = req.user;
-  if (user) return res.redirect("/");
+  if (user) return res.redirect("/management/dashboard");
   res.render("pages/login");
 });
 app.get("/users/register", auth_required, function (req, res) {
   const user = req.user;
-  if (user) return res.redirect("/");
+  if (user) return res.redirect("/management/dashboard");
   res.render("pages/register");
 });
 app.get("/logout", (req, res) => {
@@ -150,7 +156,7 @@ app.post("/users/login", async function (req, res) {
         sameSite: "lax",
       });
 
-      return res.redirect("/profile");
+      return res.redirect("/management/dashboard");
     } catch (error) {
       errors.push({ msg: error.message });
       return res.render("pages/login", {
@@ -230,9 +236,27 @@ app.post("/users/register", async function (req, res) {
 });
 app.get("/management/dashboard", auth_required, function (req, res) {
   const user = req.user;
-  if (!user) return res.redirect("/login");
+  if (!user) return res.redirect("/users/login");
 
   res.render("pages/dashboard", { user });
+});
+app.get("/management/tasks", auth_required, function (req, res) {
+  const user = req.user;
+  if (!user) return res.redirect("/users/login");
+
+  res.render("pages/tasks-management", { user });
+});
+app.get("/management/study", auth_required, function (req, res) {
+  const user = req.user;
+  if (!user) return res.redirect("/users/login");
+
+  res.render("pages/study", { user });
+});
+app.get("/management/budget", auth_required, function (req, res) {
+  const user = req.user;
+  if (!user) return res.redirect("/users/login");
+
+  res.render("pages/budget", { user });
 });
 
 app.get("/profile", auth_required, (req, res) => {
@@ -252,6 +276,50 @@ app.get("/api/users", function (req, res) {
       { id: 6, name: "Jack Doe" },
     ],
   });
+});
+app.post("/api/addTask", auth_required, async (req, res) => {
+  const user = req.user;
+  if (!user) return res.status(401).json({ error: "unauthorized" });
+  const { task } = req.body;
+  const final_object = {
+    date_created: new Date(),
+    task,
+    user_id: user.uid,
+    finished: false,
+  };
+
+  try {
+    await admin
+      .firestore()
+      .collection("tasks")
+      .add({ ...final_object });
+    res.status(200).json({ status: "successful" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+app.get("/api/tasks", auth_required, async (req, res) => {
+  const user = req.user;
+  if (!user) return res.status(401).json({ error: "unauthorized" });
+  let tasks = [];
+  try {
+    const tasks_firebase = await admin
+      .firestore()
+      .collection("tasks")
+      .where("user_id", "==", user.uid)
+      .get();
+    if (tasks_firebase.empty) {
+      return res.json({ tasks });
+    }
+    tasks_firebase.forEach((doc) => {
+      task_id = doc.id;
+      task_data = doc.data();
+      tasks.push({ task_id, ...task_data });
+    });
+    return res.json({ tasks });
+  } catch (error) {
+    return res.json({ error: error.message });
+  }
 });
 
 // Initialize server
