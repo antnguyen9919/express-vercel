@@ -9,9 +9,9 @@
 
 <body>
   <%- include('../partials/navbar.ejs'); -%>
-  <main id="task-page">
+  <main id="task-page" class="container">
     <div class="row mt-5">
-      <div class="col-md-3 mx-auto">
+      <div class="col-md-4 mx-auto mb-3">
         <div class="card">
           <div class="card-header">
             <h1 class="text-center mb-3">Summary</h1>
@@ -45,10 +45,10 @@
           <div class="card-body">
             <div class="mb-2">
               <form action="/api/addTask" method="post">
-                <div class="input-group mb-3">
-                  <input required id="new-task-input" name="new-task-input" type="text" class="rounded form-control border border-dark mx-1" placeholder="Task...">
+                <div class="input-group mb-3 d-flex align-items-center">
+                  <input required id="new-task-input" name="new-task-input" type="text" style="margin-right:10px" class="px-2 rounded form-control border border-dark " placeholder="Task...">
 
-                  <span id="basic-addon2"><button id="add-task-button" class="btn btn-success rounded" type="submit">Add</button></span>
+                  <span id="basic-addon2"><button id="add-task-button" class="btn btn-success rounded " type="submit">Add</button></span>
                 </div>
 
 

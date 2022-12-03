@@ -69,19 +69,19 @@ function auth_required(req, res, next) {
 app.get("/", auth_required, function (req, res) {
   const user = req.user;
   if (user) {
-    return res.redirect("/management/dashboard");
+    return res.redirect("/management/tasks");
   }
   res.render("pages/home", { user: req.user });
 });
 
 app.get("/users/login", auth_required, function (req, res) {
   const user = req.user;
-  if (user) return res.redirect("/management/dashboard");
+  if (user) return res.redirect("/management/tasks");
   res.render("pages/login");
 });
 app.get("/users/register", auth_required, function (req, res) {
   const user = req.user;
-  if (user) return res.redirect("/management/dashboard");
+  if (user) return res.redirect("/management/tasks");
   res.render("pages/register");
 });
 app.get("/logout", (req, res) => {
@@ -160,7 +160,7 @@ app.post("/users/login", async function (req, res) {
         sameSite: "lax",
       });
 
-      return res.redirect("/management/dashboard");
+      return res.redirect("/management/tasks");
     } catch (error) {
       errors.push({ msg: error.message });
       return res.render("pages/login", {

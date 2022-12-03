@@ -109,6 +109,7 @@ if (document.getElementById("task-page")) {
               "text-success",
               "text-decoration-line-through"
             );
+            task_li.disabled = true;
           }
           task_li.innerText = item.task;
           task_li.classList.add(
@@ -122,22 +123,28 @@ if (document.getElementById("task-page")) {
             "justify-items-between",
             "align-items-center"
           );
-          task_li.addEventListener("click", async (e) => {
-            e.preventDefault();
-            try {
-              await axios.post("/api/completeTask", { task_id: item.task_id });
-              task_li.classList.add(
-                "text-success",
-                "text-decoration-line-through"
-              );
-              remaining_nr--;
-              completed_nr++;
-              remaining_tasks.innerText = remaining_nr;
-              completed_tasks.innerText = completed_nr;
-            } catch (error) {
-              console.log(error.message);
-            }
-          });
+          if (item.finished === false) {
+            task_li.addEventListener("click", async (e) => {
+              e.preventDefault();
+              try {
+                task_li.disabled = true;
+                await axios.post("/api/completeTask", {
+                  task_id: item.task_id,
+                });
+                task_li.classList.add(
+                  "text-success",
+                  "text-decoration-line-through"
+                );
+                remaining_nr--;
+                completed_nr++;
+                remaining_tasks.innerText = remaining_nr;
+                completed_tasks.innerText = completed_nr;
+              } catch (error) {
+                task_li.disabled = false;
+                console.log(error.message);
+              }
+            });
+          }
 
           tasks_list.appendChild(task_li);
         });
