@@ -123,6 +123,7 @@ if (document.getElementById("task-page")) {
             "justify-items-between",
             "align-items-center"
           );
+
           if (item.finished === false) {
             task_li.addEventListener("click", async (e) => {
               e.preventDefault();
@@ -133,8 +134,11 @@ if (document.getElementById("task-page")) {
                 });
                 task_li.classList.add(
                   "text-success",
+                  "disabled",
                   "text-decoration-line-through"
                 );
+                task_li.ariaDisabled = true;
+
                 remaining_nr--;
                 completed_nr++;
                 remaining_tasks.innerText = remaining_nr;
