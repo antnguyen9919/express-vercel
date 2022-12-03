@@ -1,4 +1,5 @@
 var Highcharts = require("highcharts");
+import "../styles/main.css";
 // require("highcharts/modules/exporting")(Highcharts);
 // require("highcharts/themes/brand-dark")(Highcharts);
 Highcharts.chart("container", {

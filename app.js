@@ -18,7 +18,7 @@ if (!getApps().length) {
 
 // Initialize Express
 const app = express();
-const redisClient = require(path.join(__dirname, "./config/redis"));
+
 // set the view engine to ejs
 app.set("views", path.join(__dirname, "./views"));
 app.set("view engine", "ejs");
@@ -228,8 +228,11 @@ app.post("/users/register", async function (req, res) {
     }
   }
 });
-app.get("/management/dashboard", function (req, res) {
-  res.render("pages/dashboard");
+app.get("/management/dashboard", auth_required, function (req, res) {
+  const user = req.user;
+  if (!user) return res.redirect("/login");
+
+  res.render("pages/dashboard", { user });
 });
 
 app.get("/profile", auth_required, (req, res) => {

@@ -4,34 +4,3 @@ let redisClient = new Redis(
 );
 
 module.exports = redisClient;
-// const user = {
-//   name: "Bob",
-//   // The field of a Redis Hash key can only be a string.
-//   // We can write `age: 20` here but ioredis will convert it to a string anyway.
-//   age: "25",
-//   description: "I am a programmer",
-// };
-// async function test() {
-//   const new_user = {
-//     username: "thichkhach13",
-//     password: "14121502",
-//     email: "n.christian345@gmail.com",
-//     date: new Date(),
-//   };
-//   try {
-//     const id = await redisClient.hget("users", new_user.username);
-//     if (id !== null) {
-//       console.log("Username unavailable");
-//       return;
-//     } else {
-//       const user_id = await redisClient.incr("new_user_id");
-//       await redisClient.hmset("user:" + user_id, new_user);
-//       await redisClient.hset("users", new_user.username, user_id);
-//     }
-//     console.log("ok");
-//   } catch (error) {}
-
-//   return;
-// }
-
-// test();
