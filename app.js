@@ -67,6 +67,10 @@ function auth_required(req, res, next) {
 }
 
 app.get("/", auth_required, function (req, res) {
+  const user = req.user;
+  if (user) {
+    return res.redirect("/management/dashboard");
+  }
   res.render("pages/home", { user: req.user });
 });
 
@@ -82,7 +86,7 @@ app.get("/users/register", auth_required, function (req, res) {
 });
 app.get("/logout", (req, res) => {
   res.clearCookie("auth_token");
-  res.redirect("/users/login");
+  res.redirect("/");
 });
 app.post("/users/login", async function (req, res) {
   const { email, password } = req.body;
@@ -280,7 +284,7 @@ app.get("/api/users", function (req, res) {
 app.post("/api/addTask", auth_required, async (req, res) => {
   const user = req.user;
   if (!user) return res.status(401).json({ error: "unauthorized" });
-  const { task } = req.body;
+  const task = req.body["new-task-input"];
   const final_object = {
     date_created: new Date(),
     task,
@@ -293,7 +297,7 @@ app.post("/api/addTask", auth_required, async (req, res) => {
       .firestore()
       .collection("tasks")
       .add({ ...final_object });
-    res.status(200).json({ status: "successful" });
+    return res.redirect("/management/tasks");
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -306,19 +310,42 @@ app.get("/api/tasks", auth_required, async (req, res) => {
     const tasks_firebase = await admin
       .firestore()
       .collection("tasks")
+
       .where("user_id", "==", user.uid)
+
       .get();
+
     if (tasks_firebase.empty) {
       return res.json({ tasks });
     }
     tasks_firebase.forEach((doc) => {
       task_id = doc.id;
       task_data = doc.data();
+
       tasks.push({ task_id, ...task_data });
     });
-    return res.json({ tasks });
+    const sorted_tasks = tasks.sort((a, b) => {
+      return b.date_created - a.date_created;
+    });
+    return res.json({ tasks: sorted_tasks });
   } catch (error) {
     return res.json({ error: error.message });
+  }
+});
+app.post("/api/completeTask", auth_required, async (req, res) => {
+  const user = req.user;
+  if (!user) return res.status(401).json({ error: "unauthorized" });
+  const { task_id } = req.body;
+  if (!task_id) return res.status(401).json({ error: "id missing " });
+  try {
+    await admin
+      .firestore()
+      .collection("tasks")
+      .doc(task_id)
+      .update({ finished: true, complete_date: new Date() });
+    return res.status(200).json({ status: "successful" });
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
   }
 });
 

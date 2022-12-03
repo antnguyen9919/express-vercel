@@ -12,16 +12,16 @@
 <body>
 
   <%- include('../partials/navbar.ejs'); -%>
-  <main>
-    <div id="charts-container">
-      <figure class="highcharts-figure">
-        <div id="container"></div>
-        <p class="highcharts-description">
-          Basic line chart showing trends in a dataset. This chart includes the
-          <code>series-label</code> module, which adds a label to each line for
-          enhanced readability.
-        </p>
-      </figure>
+  <main class="container">
+    <div id="charts-container" class="mt-4">
+      <div class="row">
+        <div class="col-md-5">
+          <figure class="highcharts-figure">
+            <div id="container"></div>
+
+          </figure>
+        </div>
+      </div>
     </div>
   </main>
 

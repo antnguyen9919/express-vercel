@@ -10,7 +10,7 @@
 <body>
   <%- include('../partials/navbar.ejs'); -%>
   <main id="task-page">
-    <div class="row mt-3">
+    <div class="row mt-5">
       <div class="col-md-3 mx-auto">
         <div class="card">
           <div class="card-header">
@@ -18,12 +18,17 @@
           </div>
           <div class="card-body">
 
-            <div class="card-text">
-              Remaining tasks: 0
-            </div>
-            <div class="card-text">
-              Completed tasks: 0
-            </div>
+            <ul class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Remaining tasks:
+                <span class="badge bg-danger rounded-pill" id="remaining_tasks"></span>
+              </li>
+              <li class="list-group-item d-flex justify-content-between align-items-center">
+                Completed tasks:
+                <span class="badge bg-success rounded-pill" id="completed_tasks"></span>
+              </li>
+
+            </ul>
 
 
 
@@ -39,11 +44,11 @@
           </div>
           <div class="card-body">
             <div class="mb-2">
-              <form>
+              <form action="/api/addTask" method="post">
                 <div class="input-group mb-3">
                   <input required id="new-task-input" name="new-task-input" type="text" class="rounded form-control border border-dark mx-1" placeholder="Task...">
 
-                  <span id="basic-addon2"><button id="add-task-button" class="btn btn-success rounded" type="button">Add</button></span>
+                  <span id="basic-addon2"><button id="add-task-button" class="btn btn-success rounded" type="submit">Add</button></span>
                 </div>
 
 

@@ -3,108 +3,80 @@ import Highcharts from "highcharts";
 import axios from "axios";
 import "../styles/main.css";
 // require("highcharts/modules/exporting")(Highcharts);
-// require("highcharts/themes/brand-dark")(Highcharts);
+// require("highcharts/themes/dark-unica")(Highcharts);
 const chart_container = document.getElementById("charts-container");
 if (chart_container) {
   Highcharts.chart("container", {
+    chart: {
+      type: "column",
+    },
     title: {
-      text: "U.S Solar Employment Growth by Job Category, 2010-2020",
+      text: "Monthly Completion Rate",
     },
-
-    subtitle: {
-      text: 'Source: <a href="https://irecusa.org/programs/solar-jobs-census/" target="_blank">IREC</a>',
+    // subtitle: {
+    //   text: "Source: WorldClimate.com",
+    // },
+    credits: {
+      enabled: false,
     },
-
-    yAxis: {
-      title: {
-        text: "Number of Employees",
-      },
-    },
-
-    xAxis: {
-      accessibility: {
-        rangeDescription: "Range: 2010 to 2020",
-      },
-    },
-
     legend: {
-      layout: "vertical",
-      align: "right",
-      verticalAlign: "middle",
+      enabled: false,
     },
-
-    plotOptions: {
-      series: {
-        label: {
-          connectorAllowed: false,
-        },
-        pointStart: 2010,
+    xAxis: {
+      categories: [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ],
+      crosshair: true,
+    },
+    yAxis: {
+      min: 0,
+      max: 100,
+      title: {
+        text: "%",
       },
     },
-
+    tooltip: {
+      headerFormat: '<span style="font-size:10px">{point.key}</span><table>',
+      pointFormat:
+        '<tr><td style="padding:0">{series.name}: </td>' +
+        '<td style="padding:0"><b>{point.y:.1f} %</b></td></tr>',
+      footerFormat: "</table>",
+      shared: true,
+      useHTML: true,
+    },
+    plotOptions: {
+      column: {
+        pointPadding: 0.2,
+        borderWidth: 0,
+      },
+      series: {
+        borderWidth: 0,
+        dataLabels: {
+          enabled: true,
+          format: "{point.y:.1f}%",
+        },
+      },
+    },
     series: [
       {
-        name: "Installation & Developers",
+        name: "Completion rate",
+
         data: [
-          43934, 48656, 65165, 81827, 112143, 142383, 171533, 165174, 155157,
-          161454, 154610,
-        ],
-      },
-      {
-        name: "Manufacturing",
-        data: [
-          24916, 37941, 29742, 29851, 32490, 30282, 38121, 36885, 33726, 34243,
-          31050,
-        ],
-      },
-      {
-        name: "Sales & Distribution",
-        data: [
-          11744, 30000, 16005, 19771, 20185, 24377, 32147, 30912, 29243, 29213,
-          25663,
-        ],
-      },
-      {
-        name: "Operations & Maintenance",
-        data: [
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          null,
-          11164,
-          11218,
-          10077,
-        ],
-      },
-      {
-        name: "Other",
-        data: [
-          21908, 5548, 8105, 11248, 8989, 11816, 18274, 17300, 13053, 11906,
-          10073,
+          49.9, 71.5, 50.4, 29.2, 44.0, 76.0, 35.6, 48.5, 26.4, 94.1, 95.6, 0,
         ],
       },
     ],
-
-    responsive: {
-      rules: [
-        {
-          condition: {
-            maxWidth: 500,
-          },
-          chartOptions: {
-            legend: {
-              layout: "horizontal",
-              align: "center",
-              verticalAlign: "bottom",
-            },
-          },
-        },
-      ],
-    },
   });
 }
 
@@ -112,14 +84,32 @@ if (document.getElementById("task-page")) {
   const new_task_input = document.getElementById("new-task-input");
   const add_task_button = document.getElementById("add-task-button");
   const tasks_list = document.getElementById("tasks-list");
+  const remaining_tasks = document.getElementById("remaining_tasks");
+  let remaining_nr = 0;
+  let completed_nr = 0;
+  const completed_tasks = document.getElementById("completed_tasks");
+  remaining_tasks.innerText = remaining_nr;
+  completed_tasks.innerText = completed_nr;
+  let tasks = [];
   async function get_tasks() {
     try {
       const { data } = await axios.get("/api/tasks");
-      const tasks = data.tasks;
+      tasks = data.tasks;
       if (tasks.length > 0) {
         tasks.forEach((item) => {
+          if (item.finished === true) {
+            completed_nr += 1;
+          }
+          if (item.finished === false) {
+            remaining_nr += 1;
+          }
           const task_li = document.createElement("li");
-
+          if (item.finished === true) {
+            task_li.classList.add(
+              "text-success",
+              "text-decoration-line-through"
+            );
+          }
           task_li.innerText = item.task;
           task_li.classList.add(
             "list-task-item",
@@ -134,9 +124,25 @@ if (document.getElementById("task-page")) {
           );
           task_li.addEventListener("click", async (e) => {
             e.preventDefault();
+            try {
+              await axios.post("/api/completeTask", { task_id: item.task_id });
+              task_li.classList.add(
+                "text-success",
+                "text-decoration-line-through"
+              );
+              remaining_nr--;
+              completed_nr++;
+              remaining_tasks.innerText = remaining_nr;
+              completed_tasks.innerText = completed_nr;
+            } catch (error) {
+              console.log(error.message);
+            }
           });
+
           tasks_list.appendChild(task_li);
         });
+        remaining_tasks.innerText = remaining_nr;
+        completed_tasks.innerText = completed_nr;
       }
     } catch (error) {
       console.log(error.message);
@@ -151,19 +157,6 @@ if (document.getElementById("task-page")) {
       add_task_button.disabled = false;
     } else {
       add_task_button.disabled = true;
-    }
-  });
-
-  add_task_button.addEventListener("click", async () => {
-    const task = new_task_input.value;
-
-    try {
-      add_task_button.disabled = true;
-      await axios.post("/api/addTask", { task: task });
-      new_task_input.value = "";
-    } catch (error) {
-      console.log(error);
-      new_task_input.value = "";
     }
   });
 }
