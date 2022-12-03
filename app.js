@@ -10,6 +10,7 @@ var admin = require("firebase-admin");
 const { getApps } = require("firebase-admin/app");
 const serviceAccount = require(path.join(__dirname, "./service.json"));
 const bodyParser = require("body-parser");
+const chalk = require("chalk");
 
 if (!getApps().length) {
   admin.initializeApp({
@@ -58,7 +59,7 @@ function auth_required(req, res, next) {
       if (user) req.user = user;
       next();
     } catch (error) {
-      console.log(error.message);
+      console.log(chalk.red(error.message));
       next();
     }
   } else {
@@ -351,7 +352,7 @@ app.post("/api/completeTask", auth_required, async (req, res) => {
 
 // Initialize server
 app.listen(5000, () => {
-  console.log("Running on port 5000.");
+  console.log(chalk.blue("Running on port 5000."));
 });
 // Export the Express API
 module.exports = app;

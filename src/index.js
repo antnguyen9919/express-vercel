@@ -4,8 +4,14 @@ import axios from "axios";
 import "../styles/main.css";
 // require("highcharts/modules/exporting")(Highcharts);
 // require("highcharts/themes/dark-unica")(Highcharts);
+
+// Load the exporting module.
+import Exporting from "highcharts/modules/exporting";
+// Initialize exporting module. (CommonJS only)
+
 const chart_container = document.getElementById("charts-container");
 if (chart_container) {
+  Exporting(Highcharts);
   Highcharts.chart("container", {
     chart: {
       type: "column",
