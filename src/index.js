@@ -5,7 +5,7 @@ import "../styles/main.css";
 // require("highcharts/modules/exporting")(Highcharts);
 // require("highcharts/themes/dark-unica")(Highcharts);
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+import { getAnalytics, logEvent } from "firebase/analytics";
 
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
