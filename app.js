@@ -152,6 +152,7 @@ app.post("/users/login", async function (req, res) {
         name: stored_user.name,
         date_created: stored_user.date_created,
         lastLogin,
+        hashed_password: stored_user.hashed_password,
       };
       const token = jwt.sign({ user: final_user }, jwt_secret, {
         expiresIn: "1h",
@@ -268,6 +269,83 @@ app.get("/profile", auth_required, (req, res) => {
   const user = req.user;
   if (!user) return res.redirect("/users/login");
   res.render("pages/profile", { user });
+});
+app.post("/profile", auth_required, async (req, res) => {
+  const user = req.user;
+  if (!user) return res.redirect("/users/login");
+  if (req.body === null || req.body === undefined) {
+    res.render("pages/profile", {
+      errors: [{ msg: "Please enter all fields" }],
+      user,
+    });
+  }
+  let final_update = {};
+  if (req.body["name"]) final_update["name"] = req.body["name"];
+
+  try {
+    if (req.body["old_password"]) {
+      if (!req.body["new_password"]) {
+        return res.render("pages/profile", {
+          errors: [{ msg: "New password missing" }],
+          user,
+        });
+      }
+
+      const matched = await bcrypt.compare(
+        req.body["old_password"],
+        user.hashed_password
+      );
+      if (!matched) {
+        return res.render("pages/profile", {
+          errors: [{ msg: "You didn't give the correct old password" }],
+          user,
+        });
+      }
+      const hashed_password = await bcrypt.hash(req.body["new_password"], 10);
+      const last_updated = new Date();
+      final_update["hashed_password"] = hashed_password;
+      final_update["last_updated"] = last_updated;
+    }
+    if (!final_update) {
+      return res.render("pages/profile", {
+        errors: [{ msg: "No new information provider" }],
+        user,
+      });
+    }
+    await admin
+      .firestore()
+      .collection("users")
+      .doc(user.uid)
+      .update({ ...final_update });
+    const updated_ref = await admin
+      .firestore()
+      .collection("users")
+      .doc(user.uid)
+      .get();
+    const updated_user = updated_ref.data();
+    res.clearCookie("auth_token");
+    const token = jwt.sign(
+      { user: { ...updated_user, uid: updated_ref.id } },
+      jwt_secret,
+      {
+        expiresIn: "1h",
+      }
+    );
+    res.cookie("auth_token", token, {
+      httpOnly: true,
+      sameSite: "lax",
+    });
+
+    res.render("pages/profile", {
+      errors: [],
+      user: updated_user,
+    });
+  } catch (error) {
+    return res.render("pages/profile", {
+      errors: [{ msg: error.message }],
+      user,
+    });
+  }
 });
 
 app.get("/api/users", function (req, res) {

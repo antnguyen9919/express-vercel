@@ -2,7 +2,12 @@ const path = require("path");
 
 module.exports = {
   mode: "production",
-  entry: { bundle: path.resolve(__dirname, "src/index.js") },
+  entry: {
+    bundle: path.resolve(__dirname, "src/index.js"),
+    profile: path.resolve(__dirname, "src/profile.js"),
+    dashboard: path.resolve(__dirname, "src/dashboard.js"),
+    tasks: path.resolve(__dirname, "src/tasks.js"),
+  },
   output: {
     path: path.resolve(__dirname, "dist"),
     filename: "[name].js",

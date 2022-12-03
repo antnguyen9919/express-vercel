@@ -17,18 +17,28 @@
             <i class="fas fa-user-plus"></i> Profile
           </h1>
           <%-include ('../partials/messages.ejs') %>
-          <form>
+          <form method='post'>
             <div class="form-group mb-2">
               <label for="name">Name</label>
-              <input disabled type="name" id="name" name="name" class="form-control" placeholder="Enter Name" value="<%= user.name %>" />
+              <input type="name" id="name" class="form-control" placeholder="Enter Name" value="<%= user.name %>" />
             </div>
             <div class="form-group mb-3">
               <label for="email">Email</label>
-              <input disabled required type="email" id="email" name="email" class="form-control" placeholder="Enter Email" value="<%= user.email %>" />
+              <input disabled readonly type="email" id="email" class="form-control" placeholder="Enter Email" value="<%= user.email %>" />
+            </div>
+            <div class="form-group mb-3">
+              <label for="old-password">Current password</label>
+              <input type="password" id="old-password" class="form-control" placeholder="Enter old password" />
+            </div>
+            <div class="input-group mb-3">
+
+              <input type="password" class="form-control" style="margin-right:10px" id="new-password" placeholder="Enter new password" aria-label="new-password">
+
+              <input type="password" class="form-control" id="confirm-password" placeholder="Confirm your password" aria-label="confirm-password">
             </div>
 
 
-            <button disabled type="submit" class="btn btn-primary btn-block">
+            <button disabled id="submit_button" type="submit" class="btn btn-primary btn-block">
               Edit Profile
             </button>
           </form>
@@ -39,6 +49,8 @@
 
 
   </main>
+  <%- include('../partials/scripts.ejs'); -%>
+  <script src="/profile.js"></script>
 </body>
 
 </html>
