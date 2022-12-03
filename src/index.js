@@ -21,7 +21,7 @@ const app = getApps().length < 1 ? initializeApp(firebaseConfig) : getApp();
 console.log(process.env.NODE_ENV);
 if (process.env.NODE_ENV === "production") {
   const analytics = getAnalytics(app);
-  logEvent(analytics, "notification_received");
+  logEvent(analytics, "express-app analytics started");
 }
 
 // Load the exporting module.

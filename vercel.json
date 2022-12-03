@@ -13,5 +13,7 @@
 
       "dest": "app.js"
     }
-  ]
+  ],
+
+  "regions": ["fra1"]
 }
